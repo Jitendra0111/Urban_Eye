@@ -54,3 +54,24 @@ export function useRevealOn(value) {
   }, [value]);
   return ref;
 }
+
+const savedAt = (iso) =>
+  new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+
+/** Shown on a result that came from the database instead of a fresh model run. */
+export function SavedNote({ result, savedOn, onRerun, busy }) {
+  if (!result?.cached) return null;
+  return (
+    <div className="saved-note" role="status">
+      <span>
+        <strong>Saved result</strong>
+        {savedOn ? ` from ${savedAt(savedOn)}` : ""}, loaded instantly from the database.
+      </span>
+      {onRerun && (
+        <button type="button" className="btn btn-small" onClick={onRerun} disabled={busy}>
+          {busy ? "Running…" : "Run again"}
+        </button>
+      )}
+    </div>
+  );
+}

@@ -4,12 +4,14 @@ import Home from "./pages/Home";
 import MapAnalysis from "./pages/MapAnalysis";
 import ChangeOverTime from "./pages/ChangeOverTime";
 import PhotoAnalysis from "./pages/PhotoAnalysis";
+import History from "./pages/History";
 
 const icon = {
   home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
   map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 0v14m6-12v14",
   change: "M4 7h13l-3-3m6 13H7l3 3",
   photo: "M4 6h3l2-2h6l2 2h3v13H4zM12 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
+  history: "M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5m4-1v5l3 2",
 };
 
 const NAV = [
@@ -17,6 +19,7 @@ const NAV = [
   { to: "/map", label: "Map analysis", icon: icon.map },
   { to: "/change", label: "Change over time", icon: icon.change },
   { to: "/photo", label: "Photo analysis", icon: icon.photo },
+  { to: "/history", label: "History", icon: icon.history },
 ];
 
 function Icon({ d }) {
@@ -85,6 +88,7 @@ export default function App() {
               <Route path="/map" element={<MapAnalysis />} />
               <Route path="/change" element={<ChangeOverTime />} />
               <Route path="/photo" element={<PhotoAnalysis />} />
+              <Route path="/history" element={<History />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </main>

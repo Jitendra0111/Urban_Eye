@@ -3,7 +3,9 @@ worker thread and the server stays responsive while a model is running."""
 import httpx
 import numpy as np
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from sqlalchemy.exc import SQLAlchemyError
 
+from . import db
 from .config import settings
 from .models import registry
 from .schemas import (AnalysisResponse, DetectResponse, HealthResponse, ImpactResponse,
@@ -77,9 +79,14 @@ def coverage_of(rgb: np.ndarray) -> tuple[str, dict[str, float]]:
 
 @router.get("/health", response_model=HealthResponse)
 def health():
+    try:
+        saved = db.count()
+    except SQLAlchemyError:
+        saved = None
     return HealthResponse(status="ok", device=registry.device,
                           segmentation_model=registry.segmenter is not None,
-                          detector=registry.detector.name if registry.detector else None)
+                          detector=registry.detector.name if registry.detector else None,
+                          saved_results=saved)
 
 
 @router.get("/classes")

@@ -15,6 +15,20 @@ talks to this server, and API keys never ship to the browser.
 | `GET  /api/satellite/dates?lat=&lon=` | Dates with distinct imagery at that point (2014 → today) | new |
 | `POST /api/satellite/analyze` | Downloads the satellite image of a map area, then segmentation + impact (+ detection) | new |
 | `POST /api/satellite/compare` | Land-cover change of an area between two dates: change map, transitions, hectares | new |
+| `GET  /api/history` | Saved analyses and comparisons, newest first (`?kind=analysis\|comparison`) | new |
+| `GET  /api/history/{id}` | One saved result with its images | new |
+| `DELETE /api/history/{id}` | Delete a saved result | new |
+
+### Results database
+
+Every `/analyze` and `/compare` result is saved in a database (`app/db.py`, SQLAlchemy):
+
+- **History:** list, reopen and delete past results (`/api/history`, and the History page of the web app).
+- **Cache:** the same area, date(s) and model return the saved result instantly (responses have
+  `"cached": true` and a `saved_id`). Send `"refresh": true` to run the model again. Results for
+  "latest imagery" are reused for `CACHE_LATEST_DAYS` days (default 7), because Esri updates it.
+- **Storage:** SQLite file `backend/data/urbaneye.db` by default, created automatically. For a deployed
+  server set `DATABASE_URL` to PostgreSQL in `.env`; no code changes are needed.
 
 ### Satellite imagery
 
@@ -111,7 +125,9 @@ backend/
   app/
     main.py          FastAPI app, CORS, startup model loading
     routes.py        upload endpoints + shared result builders
-    satellite_routes.py  satellite dates / analyze / compare endpoints
+    satellite_routes.py  satellite dates / analyze / compare endpoints (saved + cached)
+    history_routes.py    saved results: list / open / delete
+    db.py            results database (SQLite or PostgreSQL via SQLAlchemy)
     config.py        settings from .env
     models.py        loads U-Net++ / YOLO / Roboflow once at startup
     schemas.py       response models

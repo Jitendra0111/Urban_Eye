@@ -35,10 +35,19 @@ class Settings:
     satellite_zoom: int = int(os.getenv("SATELLITE_ZOOM", "18"))
     satellite_max_pixels: int = int(os.getenv("SATELLITE_MAX_PIXELS", str(2048 * 2048)))
 
+    # Results database: SQLite file by default; e.g. postgresql+psycopg://user:pass@host/urbaneye
+    database_url: str = os.getenv("DATABASE_URL") or f"sqlite:///{(BACKEND_DIR / 'data' / 'urbaneye.db').as_posix()}"
+    cache_latest_days: int = int(os.getenv("CACHE_LATEST_DAYS", "7"))   # "latest imagery" changes over time
+
     device: str = os.getenv("DEVICE", "auto")          # "auto", "cpu", "cuda"
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "20"))
     cors_origins: list[str] = field(default_factory=lambda: _list(
         "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"))
+
+    @property
+    def database_path(self) -> Path:
+        """SQLite file location (only meaningful for sqlite:/// URLs)."""
+        return Path(self.database_url.removeprefix("sqlite:///"))
 
 
 settings = Settings()

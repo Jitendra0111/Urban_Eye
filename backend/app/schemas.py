@@ -49,6 +49,7 @@ class SatelliteRequest(BaseModel):
                                                   "empty = latest imagery")
     zoom: int | None = Field(None, ge=16, le=19, description="Empty = finest zoom that fits")
     detect: bool = Field(False, description="Also run the object detector")
+    refresh: bool = Field(False, description="Ignore a saved result and run the model again")
 
 
 class CompareRequest(BaseModel):
@@ -56,6 +57,7 @@ class CompareRequest(BaseModel):
     release_before: int
     release_after: int | None = Field(None, description="Empty = latest imagery")
     zoom: int | None = Field(None, ge=16, le=19)
+    refresh: bool = Field(False, description="Ignore a saved result and run the model again")
 
 
 class Release(BaseModel):
@@ -81,6 +83,8 @@ class SatelliteAnalysisResponse(BaseModel):
     segmentation: SegmentResponse | None
     impact: ImpactResponse
     detection: DetectResponse | None = None
+    saved_id: int | None = Field(None, description="Id of this result in the history database")
+    cached: bool = Field(False, description="True when returned from the database instead of re-run")
 
 
 class Transition(BaseModel):
@@ -98,6 +102,8 @@ class CompareResponse(BaseModel):
     coverage_change: dict[str, float] = Field(description="after - before, percentage points")
     transitions: list[Transition]
     change_map: str
+    saved_id: int | None = Field(None, description="Id of this result in the history database")
+    cached: bool = Field(False, description="True when returned from the database instead of re-run")
 
 
 class HealthResponse(BaseModel):
@@ -105,3 +111,33 @@ class HealthResponse(BaseModel):
     device: str
     segmentation_model: bool
     detector: str | None
+    saved_results: int | None = Field(None, description="Results in the database (None if unavailable)")
+
+
+class HistoryItem(BaseModel):
+    id: int
+    kind: str = Field(description='"analysis" or "comparison"')
+    created_at: str
+    bbox: list[float] = Field(description=BBOX_DOC)
+    area_ha: float
+    date: str = Field(description="Imagery date (the earlier date for comparisons)")
+    date_after: str | None
+    release: int | None
+    release_after: int | None
+    coverage: dict[str, float]
+    green_score: float
+    urban_score: float
+    level: str
+    changed_percent: float | None
+    changed_hectares: float | None
+    model: str
+
+
+class HistoryPage(BaseModel):
+    total: int
+    items: list[HistoryItem]
+
+
+class HistoryEntry(BaseModel):
+    item: HistoryItem
+    result: dict = Field(description="The saved /analyze or /compare response")

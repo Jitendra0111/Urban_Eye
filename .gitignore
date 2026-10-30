@@ -24,3 +24,6 @@ backend/models/*
 # Kept local only: research paper and Colab notebooks
 paper/
 *.ipynb
+
+# Local results database (SQLite)
+backend/data/

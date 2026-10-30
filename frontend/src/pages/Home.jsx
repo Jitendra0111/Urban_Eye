@@ -77,6 +77,10 @@ export default function Home() {
               <dd>{health.device.toUpperCase()}</dd>
             </div>
             <div>
+              <dt>Saved results</dt>
+              <dd>{health.saved_results ?? "Database unavailable"}</dd>
+            </div>
+            <div>
               <dt>Imagery</dt>
               <dd>Esri World Imagery and Wayback archive, ~0.5 m per pixel</dd>
             </div>

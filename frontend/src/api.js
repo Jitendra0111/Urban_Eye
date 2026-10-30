@@ -46,4 +46,8 @@ export const api = {
   segment: (file) => postFile("/api/segment", file),
   detect: (file) => postFile("/api/detect", file),
   impact: (file) => postFile("/api/environmental-impact", file),
+  history: ({ kind = "", limit = 20, offset = 0 } = {}) =>
+    request(`/api/history?limit=${limit}&offset=${offset}${kind ? `&kind=${kind}` : ""}`),
+  historyEntry: (id) => request(`/api/history/${id}`),
+  deleteHistory: (id) => request(`/api/history/${id}`, { method: "DELETE" }),
 };

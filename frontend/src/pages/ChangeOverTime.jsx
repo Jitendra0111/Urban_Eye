@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import AreaPicker from "../components/AreaPicker";
 import AreaSummary, { bboxReady } from "../components/AreaSummary";
@@ -9,7 +10,7 @@ import DateSelect from "../components/DateSelect";
 import { Empty, ErrorNote, Working } from "../components/Feedback";
 import ImageViewer from "../components/ImageViewer";
 import ImpactPanel from "../components/ImpactPanel";
-import { PageHead, Stats, Step, useRevealOn } from "../components/Layout";
+import { PageHead, SavedNote, Stats, Step, useRevealOn } from "../components/Layout";
 import { classInfo } from "../classes";
 import { formatHa } from "../geo";
 import { useAreaDates, useHealth } from "../hooks";
@@ -26,24 +27,59 @@ export default function ChangeOverTime() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [savedOn, setSavedOn] = useState(null);
+  const [params] = useSearchParams();
+  const savedDates = useRef(null); // dates of a result opened from History, applied once its dates load
   const dates = useAreaDates(bbox);
   const resultsRef = useRevealOn(result);
 
   // Default "before" to the oldest available date whenever the area's dates change.
   useEffect(() => {
+    if (savedDates.current && dates.dates.length) {
+      setBefore(savedDates.current.before);
+      setAfter(savedDates.current.after);
+      savedDates.current = null;
+      return;
+    }
     const oldest = dates.dates.at(-1);
     setBefore(oldest ? String(oldest.release) : "");
   }, [dates.dates]);
 
-  async function compare() {
+  // Opened from History (/change?saved=ID): show the saved comparison and its area.
+  const savedId = params.get("saved");
+  useEffect(() => {
+    if (!savedId) return;
+    let alive = true;
+    setError(null);
+    api
+      .historyEntry(savedId)
+      .then(({ item, result: saved }) => {
+        if (!alive) return;
+        savedDates.current = {
+          before: item.release ? String(item.release) : "",
+          after: item.release_after ? String(item.release_after) : "",
+        };
+        setBbox(item.bbox);
+        setSavedOn(item.created_at);
+        setResult(saved);
+      })
+      .catch((e) => alive && setError(e.message));
+    return () => {
+      alive = false;
+    };
+  }, [savedId]);
+
+  async function compare(refresh = false) {
     setBusy(true);
     setError(null);
     try {
+      setSavedOn(null);
       setResult(
         await api.compare({
           bbox,
           release_before: Number(before),
           release_after: after ? Number(after) : null,
+          refresh,
         }),
       );
     } catch (e) {
@@ -92,7 +128,7 @@ export default function ChangeOverTime() {
             {modelMissing && (
               <p className="note note-warn">Change detection needs the U-Net++ model. Load it in the backend first.</p>
             )}
-            <button type="button" className="btn btn-primary btn-block" onClick={compare} disabled={!canRun}>
+            <button type="button" className="btn btn-primary btn-block" onClick={() => compare()} disabled={!canRun}>
               {busy ? "Comparing…" : "Compare dates"}
             </button>
             {busy && <Working>Downloading both images and mapping their land cover.</Working>}
@@ -118,6 +154,8 @@ export default function ChangeOverTime() {
             </h2>
             <p className="mono muted">{b.scene.area_ha} ha analysed</p>
           </div>
+
+          <SavedNote result={result} savedOn={savedOn} onRerun={() => compare(true)} busy={busy} />
 
           <Stats
             items={[
