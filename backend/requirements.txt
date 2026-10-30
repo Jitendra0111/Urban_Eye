@@ -1,0 +1,16 @@
+# API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+python-dotenv==1.0.1
+httpx==0.28.1
+numpy>=1.26,<3
+pillow>=10.4
+
+# Models (U-Net++ segmentation and YOLO11 detection)
+torch>=2.3
+segmentation-models-pytorch>=0.3.4
+ultralytics>=8.3.0
+
+# Tests
+pytest==8.3.4

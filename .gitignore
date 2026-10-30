@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+ENV/
+pyvenv.cfg
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Secrets and local settings
+.env
+
+# Model weights (too large for git; download from Google Drive, see README)
+backend/models/*
+!backend/models/.gitkeep
+*.pth
+*.pt
+
+# Kept local only: research paper and Colab notebooks
+paper/
+*.ipynb
