@@ -8,8 +8,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from . import db
 from .config import settings
 from .models import registry
-from .schemas import (AnalysisResponse, DetectResponse, HealthResponse, ImpactResponse,
-                      SegmentResponse)
+from .schemas import (QUALITY_DOC, AnalysisResponse, DetectResponse, HealthResponse,
+                      ImpactResponse, Quality, SegmentResponse)
 from .services import detector as det
 from .services import segmenter as seg
 from .services.images import InvalidImage, decode_image, to_data_url
@@ -67,10 +67,10 @@ def impact_result(source: str, coverage: dict[str, float]) -> ImpactResponse:
     return ImpactResponse(source=source, coverage=coverage, **calculate_impact(coverage))
 
 
-def coverage_of(rgb: np.ndarray) -> tuple[str, dict[str, float]]:
+def coverage_of(rgb: np.ndarray, tta: bool = True) -> tuple[str, dict[str, float]]:
     """Pixel-accurate coverage from U-Net++ when available, otherwise box area from the detector."""
     if registry.segmenter is not None:
-        return "segmentation", seg.coverage(registry.segmenter.predict(rgb))
+        return "segmentation", seg.coverage(registry.segmenter.predict(rgb, tta=tta))
     detections = run_detector(rgb, 0.3)
     return "detection", det.box_coverage(detections, rgb.shape[1], rgb.shape[0])
 
@@ -102,20 +102,21 @@ def detect(file: UploadFile = File(...), confidence: float = Query(0.25, ge=0.0,
 
 @router.post("/segment", response_model=SegmentResponse,
              summary="Land-cover segmentation with U-Net++ (8 OpenEarthMap classes)")
-def segment(file: UploadFile = File(...)):
+def segment(file: UploadFile = File(...), quality: Quality = Query("accurate", description=QUALITY_DOC)):
     model = require_segmenter()
     rgb = read_upload(file)
-    return segment_result(rgb, model.predict(rgb))
+    return segment_result(rgb, model.predict(rgb, tta=quality == "accurate"))
 
 
 @router.post("/analysis", response_model=AnalysisResponse,
              summary="Percent of the image covered by each class (Land Analysis page)")
-def analysis(file: UploadFile = File(...)):
-    source, cov = coverage_of(read_upload(file))
+def analysis(file: UploadFile = File(...), quality: Quality = Query("accurate", description=QUALITY_DOC)):
+    source, cov = coverage_of(read_upload(file), tta=quality == "accurate")
     return AnalysisResponse(source=source, coverage=cov)
 
 
 @router.post("/environmental-impact", response_model=ImpactResponse,
              summary="Green / urban scores, status and recommendations (Environmental Impact page)")
-def environmental_impact(file: UploadFile = File(...)):
-    return impact_result(*coverage_of(read_upload(file)))
+def environmental_impact(file: UploadFile = File(...),
+                         quality: Quality = Query("accurate", description=QUALITY_DOC)):
+    return impact_result(*coverage_of(read_upload(file), tta=quality == "accurate"))

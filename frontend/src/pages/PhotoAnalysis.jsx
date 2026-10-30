@@ -5,7 +5,7 @@ import CoverageTable from "../components/CoverageTable";
 import { Empty, ErrorNote, Working } from "../components/Feedback";
 import ImageViewer from "../components/ImageViewer";
 import ImpactPanel from "../components/ImpactPanel";
-import { PageHead, Stats, Step, useRevealOn } from "../components/Layout";
+import { PageHead, QualitySwitch, Stats, Step, useQuality, useRevealOn } from "../components/Layout";
 import { classInfo } from "../classes";
 import { useHealth } from "../hooks";
 
@@ -22,6 +22,7 @@ export default function PhotoAnalysis() {
   const [errors, setErrors] = useState([]);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [quality, setQuality] = useQuality();
   const input = useRef(null);
   const resultsRef = useRevealOn(result);
 
@@ -43,8 +44,8 @@ export default function PhotoAnalysis() {
     setBusy(true);
     setErrors([]);
     const jobs = {
-      impact: api.impact(file),
-      segment: health?.segmentation_model ? api.segment(file) : null,
+      impact: api.impact(file, quality),
+      segment: health?.segmentation_model ? api.segment(file, quality) : null,
       detect: health?.detector ? api.detect(file) : null,
     };
     const keys = Object.keys(jobs).filter((k) => jobs[k]);
@@ -89,6 +90,7 @@ export default function PhotoAnalysis() {
           </Step>
 
           <Step n={2} title="Run the analysis" done={Boolean(result)}>
+            <QualitySwitch value={quality} onChange={setQuality} disabled={busy} />
             <button type="button" className="btn btn-primary btn-block" onClick={analyze} disabled={!file || busy}>
               {busy ? "Analysing…" : "Analyse photo"}
             </button>

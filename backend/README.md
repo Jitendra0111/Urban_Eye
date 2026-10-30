@@ -18,6 +18,33 @@ talks to this server, and API keys never ship to the browser.
 | `GET  /api/history` | Saved analyses and comparisons, newest first (`?kind=analysis\|comparison`) | new |
 | `GET  /api/history/{id}` | One saved result with its images | new |
 | `DELETE /api/history/{id}` | Delete a saved result | new |
+| `GET  /api/history/{id}/report.pdf` | PDF report of a saved analysis or comparison | new |
+
+### Faster inference: ONNX Runtime and Fast / Accurate mode
+
+Export the trained model to ONNX once (and again whenever you replace the `.pth` file):
+
+```powershell
+python scripts/export_onnx.py      # writes models/unetpp_oem8.onnx and checks it matches PyTorch
+```
+
+On CPU the backend then uses ONNX Runtime automatically (`SEG_ENGINE=auto`; set `torch` to force PyTorch).
+Every analysis endpoint also takes `quality`: `"accurate"` (default) averages the image and its mirror
+image, `"fast"` runs the model once. Measured on a laptop CPU (12 threads) with the trained model:
+
+| Area | PyTorch, Accurate | ONNX, Accurate | ONNX, Fast |
+|---|---|---|---|
+| ~0.5 km (932 x 850 px) | 9.0 s | 4.1 s | 2.0 s |
+| ~1 km (1864 x 1660 px) | 61.4 s | 27.3 s | 13.6 s |
+
+ONNX gives exactly the same labels as PyTorch; Fast mode agrees with Accurate on about 94% of pixels.
+Downloading the imagery adds a few seconds on top.
+
+### PDF reports
+
+`GET /api/history/{id}/report.pdf` builds a report from a saved result: location, imagery date, model
+and mode, satellite image and land-cover map, coverage table with hectares, environmental assessment and
+recommendations. Comparison reports add both dates, the change map, transitions and coverage change.
 
 ### Results database
 
@@ -132,12 +159,14 @@ backend/
     models.py        loads U-Net++ / YOLO / Roboflow once at startup
     schemas.py       response models
     services/
-      segmenter.py   U-Net++ inference (tiled for large images) + coverage, colour mask
+      segmenter.py   U-Net++ inference, PyTorch or ONNX Runtime (tiled, Fast/Accurate) + coverage
+      report.py      PDF reports (ReportLab)
       detector.py    YOLO11 and Roboflow detectors, counts, annotation, box coverage
       impact.py      environmental impact score and recommendations
       satellite.py   Esri tile download/stitching, Wayback date discovery
       change.py      before/after label comparison, transitions, change map
       images.py      upload decoding, PNG data URLs
-  models/            put .pth / .pt weights here (git-ignored)
+  scripts/export_onnx.py  export the .pth model to ONNX
+  models/            put .pth / .pt / .onnx weights here (git-ignored)
   tests/test_api.py
 ```

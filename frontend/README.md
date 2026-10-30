@@ -5,6 +5,8 @@
 | **Home** `/` | Overview and model status | `GET /api/health` |
 | **Map analysis** `/map` | Search a place, draw an area on the satellite map, choose an imagery date, get the land-cover map, coverage and hectares per class, and the environmental assessment | `/api/satellite/dates`, `/api/satellite/analyze` |
 | **Change over time** `/change` | Same area at two dates: before/after slider, change map, biggest transitions (e.g. tree → building, in ha), coverage change, impact at each date | `/api/satellite/compare` |
+| **Timeline** `/timeline` | Analyse one area at 4–12 imagery dates since 2014: one small chart per class, environmental scores over time, table of every date | `/api/satellite/dates`, `/api/satellite/analyze` (once per date) |
+| **History** `/history` | Saved analyses and comparisons: reopen, download PDF, delete | `/api/history` |
 | **Photo analysis** `/photo` | Upload your own aerial photo: land cover, detected objects, impact | `/api/segment`, `/api/detect`, `/api/environmental-impact` |
 
 ## Run
@@ -24,6 +26,9 @@ Open http://localhost:5173. During development, Vite forwards `/api/...` to the 
 Production build: `npm run build` creates `dist/`. If it is served from a different address than the
 backend, set `VITE_API_URL` (see `.env.example`) before building, and add that address to
 `CORS_ORIGINS` in the backend `.env`.
+
+Every analysis page has a **Fast / Accurate** switch (remembered in the browser), and saved results
+have a **Download PDF report** button.
 
 ## Using the map
 

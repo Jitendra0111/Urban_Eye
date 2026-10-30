@@ -15,7 +15,7 @@ from app.services.impact import calculate_impact
 class FakeSegmenter:
     name = "fake-unet"
 
-    def predict(self, rgb):
+    def predict(self, rgb, tta=True):
         labels = np.full(rgb.shape[:2], 4, dtype=np.uint8)   # tree
         labels[: rgb.shape[0] // 4] = 7                      # top quarter building
         return labels

@@ -10,7 +10,9 @@ Land-cover mapping and change detection from satellite imagery.
 
 1. Train the model in Colab. Download `MyDrive/UrbanEye/checkpoints/unetpp_b4_oem8_v2/best.pth` and save it as
    `backend/models/unetpp_oem8_best.pth`.
-2. Backend (terminal 1):
+2. Optional but recommended (2–4x faster on CPU): after step 3's `pip install`, run
+   `python scripts/export_onnx.py` in the `backend` folder once.
+3. Backend (terminal 1):
    ```powershell
    cd backend
    python -m venv .venv; .venv\Scripts\Activate.ps1
@@ -18,13 +20,13 @@ Land-cover mapping and change detection from satellite imagery.
    copy .env.example .env
    uvicorn app.main:app --reload --port 8000
    ```
-3. Frontend (terminal 2):
+4. Frontend (terminal 2):
    ```powershell
    cd frontend
    npm install
    npm run dev
    ```
-4. Open http://localhost:5173.
+5. Open http://localhost:5173.
 
 The app also runs before the model is trained: the satellite map, dates, and imagery work, and the
 header shows "Model not loaded" until the weights file is in place.

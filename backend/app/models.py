@@ -16,10 +16,8 @@ class ModelRegistry:
         self.device = _pick_device(settings.device)
         log.info("Device: %s", self.device)
 
-        if settings.seg_weights.exists():
-            from .services.segmenter import Segmenter
-            self.segmenter = Segmenter(settings.seg_weights, settings.seg_encoder,
-                                       self.device, settings.seg_tile)
+        self.segmenter = _load_segmenter(self.device)
+        if self.segmenter:
             log.info("Loaded %s", self.segmenter.name)
         else:
             log.warning("Segmentation weights not found at %s; /api/segment disabled",
@@ -37,6 +35,23 @@ class ModelRegistry:
         else:
             log.warning("No detector: put YOLO weights at %s or set ROBOFLOW_API_KEY",
                         settings.yolo_weights)
+
+
+def _load_segmenter(device: str):
+    """ONNX Runtime when the exported model exists (fastest on CPU), otherwise PyTorch."""
+    engine = settings.seg_engine
+    use_onnx = engine == "onnx" or (engine == "auto" and device == "cpu" and settings.seg_onnx.exists())
+    if use_onnx:
+        try:
+            from .services.segmenter import OnnxSegmenter
+            return OnnxSegmenter(settings.seg_onnx, settings.seg_encoder, settings.seg_tile,
+                                 settings.onnx_threads)
+        except Exception as e:                     # missing onnxruntime or file: fall back
+            log.warning("ONNX model not usable (%s); using PyTorch", e)
+    if settings.seg_weights.exists():
+        from .services.segmenter import TorchSegmenter
+        return TorchSegmenter(settings.seg_weights, settings.seg_encoder, device, settings.seg_tile)
+    return None
 
 
 def _pick_device(choice: str) -> str:

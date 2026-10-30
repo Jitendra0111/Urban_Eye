@@ -1267,6 +1267,216 @@ select {
   object-fit: contain;
 }
 
+/* ------------------------------------------------------------ fast / accurate switch */
+.quality {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quality legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  gap: 3px;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.segmented-option {
+  position: relative;
+  text-align: center;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.segmented-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented-option.is-on {
+  background: var(--panel);
+  color: var(--teal-dark);
+  box-shadow: 0 1px 3px rgba(15, 30, 39, 0.15);
+}
+
+.segmented-option:focus-within {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+.quality:disabled .segmented-option {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.results-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+a.btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------ timeline */
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--teal);
+  transition: width 0.3s;
+}
+
+.tl {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tl-grid-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px 18px;
+}
+
+.tl-panel {
+  margin: 0;
+  min-width: 0;
+}
+
+.tl-title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.tl-note {
+  margin-left: auto;
+  font: 500 12px var(--mono);
+  color: var(--muted);
+}
+
+.tl-plot {
+  position: relative;
+}
+
+.tl-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.tl-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.tl-axis {
+  font: 10px var(--mono);
+  fill: var(--muted);
+}
+
+.tl-cross {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.tl-tip {
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 9px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 6px;
+  font: 12px var(--mono);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.tl-tip .swatch {
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+}
+
+.tl-scores {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) auto;
+  gap: 8px 24px;
+  align-items: end;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.tl-legend {
+  flex-direction: column;
+  padding-bottom: 28px;
+}
+
+.timeline-table th,
+.timeline-table td {
+  padding: 7px 10px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .tl-scores {
+    grid-template-columns: 1fr;
+  }
+  .tl-legend {
+    flex-direction: row;
+    padding-bottom: 0;
+  }
+}
+
 /* ------------------------------------------------------------ saved results & history */
 .saved-note {
   display: flex;

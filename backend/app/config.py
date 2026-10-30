@@ -24,6 +24,11 @@ class Settings:
     seg_weights: Path = field(default_factory=lambda: _path("SEG_WEIGHTS", "models/unetpp_oem8_best.pth"))
     seg_encoder: str = os.getenv("SEG_ENCODER", "efficientnet-b4")
     seg_tile: int = int(os.getenv("SEG_TILE", "1024"))
+    # ONNX export of the same model (scripts/export_onnx.py), run with ONNX Runtime: faster on CPU.
+    # SEG_ENGINE: "auto" (ONNX if the file exists and no GPU, else PyTorch), "onnx" or "torch".
+    seg_onnx: Path = field(default_factory=lambda: _path("SEG_ONNX", "models/unetpp_oem8.onnx"))
+    seg_engine: str = os.getenv("SEG_ENGINE", "auto").lower()
+    onnx_threads: int = int(os.getenv("ONNX_THREADS", "0"))           # 0 = all CPU cores
 
     # Object detector: "yolo" (local Ultralytics weights), "roboflow" (hosted API) or "auto"
     detector: str = os.getenv("DETECTOR", "auto").lower()

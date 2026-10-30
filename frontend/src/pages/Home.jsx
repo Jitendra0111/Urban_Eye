@@ -16,6 +16,12 @@ const TASKS = [
     action: "Compare two dates",
   },
   {
+    to: "/timeline",
+    title: "Timeline",
+    text: "Analyse one area at up to 12 imagery dates since 2014 and chart how every land-cover class grew or shrank.",
+    action: "Build a timeline",
+  },
+  {
     to: "/photo",
     title: "Photo analysis",
     text: "Upload your own aerial or satellite photo to map its land cover, detect objects, and assess its environmental impact.",

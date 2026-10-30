@@ -59,6 +59,9 @@ function HistoryCard({ item, onDelete, deleting }) {
         <Link to={`${isChange ? "/change" : "/map"}?saved=${item.id}`} className="btn btn-small btn-primary">
           Open
         </Link>
+        <a className="btn btn-small" href={api.reportUrl(item.id)} download>
+          PDF
+        </a>
         <button type="button" className="btn btn-small btn-quiet" onClick={() => onDelete(item)} disabled={deleting}>
           {deleting ? "Deleting…" : "Delete"}
         </button>

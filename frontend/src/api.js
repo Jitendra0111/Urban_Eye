@@ -32,10 +32,10 @@ const postJson = (path, data) =>
     body: JSON.stringify(data),
   });
 
-const postFile = (path, file) => {
+const postFile = (path, file, query = "") => {
   const form = new FormData();
   form.append("file", file);
-  return request(path, { method: "POST", body: form });
+  return request(`${path}${query}`, { method: "POST", body: form });
 };
 
 export const api = {
@@ -43,11 +43,13 @@ export const api = {
   dates: (lat, lon) => request(`/api/satellite/dates?lat=${lat}&lon=${lon}`),
   analyzeArea: (body) => postJson("/api/satellite/analyze", body),
   compare: (body) => postJson("/api/satellite/compare", body),
-  segment: (file) => postFile("/api/segment", file),
+  segment: (file, quality = "accurate") => postFile("/api/segment", file, `?quality=${quality}`),
   detect: (file) => postFile("/api/detect", file),
-  impact: (file) => postFile("/api/environmental-impact", file),
+  impact: (file, quality = "accurate") =>
+    postFile("/api/environmental-impact", file, `?quality=${quality}`),
   history: ({ kind = "", limit = 20, offset = 0 } = {}) =>
     request(`/api/history?limit=${limit}&offset=${offset}${kind ? `&kind=${kind}` : ""}`),
   historyEntry: (id) => request(`/api/history/${id}`),
   deleteHistory: (id) => request(`/api/history/${id}`, { method: "DELETE" }),
+  reportUrl: (id) => `${BASE}/api/history/${id}/report.pdf`,
 };

@@ -1,5 +1,11 @@
 """Response models (these also generate the interactive docs at /docs)."""
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+Quality = Literal["fast", "accurate"]
+QUALITY_DOC = ('"accurate" averages the image and its mirror image (2 model passes); '
+               '"fast" uses one pass, about half the time')
 
 
 class Detection(BaseModel):
@@ -49,6 +55,7 @@ class SatelliteRequest(BaseModel):
                                                   "empty = latest imagery")
     zoom: int | None = Field(None, ge=16, le=19, description="Empty = finest zoom that fits")
     detect: bool = Field(False, description="Also run the object detector")
+    quality: Quality = Field("accurate", description=QUALITY_DOC)
     refresh: bool = Field(False, description="Ignore a saved result and run the model again")
 
 
@@ -57,6 +64,7 @@ class CompareRequest(BaseModel):
     release_before: int
     release_after: int | None = Field(None, description="Empty = latest imagery")
     zoom: int | None = Field(None, ge=16, le=19)
+    quality: Quality = Field("accurate", description=QUALITY_DOC)
     refresh: bool = Field(False, description="Ignore a saved result and run the model again")
 
 
@@ -83,6 +91,7 @@ class SatelliteAnalysisResponse(BaseModel):
     segmentation: SegmentResponse | None
     impact: ImpactResponse
     detection: DetectResponse | None = None
+    quality: Quality = "accurate"
     saved_id: int | None = Field(None, description="Id of this result in the history database")
     cached: bool = Field(False, description="True when returned from the database instead of re-run")
 
@@ -102,6 +111,7 @@ class CompareResponse(BaseModel):
     coverage_change: dict[str, float] = Field(description="after - before, percentage points")
     transitions: list[Transition]
     change_map: str
+    quality: Quality = "accurate"
     saved_id: int | None = Field(None, description="Id of this result in the history database")
     cached: bool = Field(False, description="True when returned from the database instead of re-run")
 

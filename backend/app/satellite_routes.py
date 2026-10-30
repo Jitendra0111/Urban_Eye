@@ -67,11 +67,12 @@ def _scene_model(scene: dict) -> Scene:
                  attribution=sat.ATTRIBUTION)
 
 
-def _analyze(scene: dict, detect: bool, labels: np.ndarray | None = None) -> SatelliteAnalysisResponse:
+def _analyze(scene: dict, detect: bool, quality: str,
+             labels: np.ndarray | None = None) -> SatelliteAnalysisResponse:
     rgb = scene["rgb"]
     if registry.segmenter is not None:
         if labels is None:
-            labels = registry.segmenter.predict(rgb)
+            labels = registry.segmenter.predict(rgb, tta=quality == "accurate")
         segmentation = segment_result(rgb, labels)
         impact = impact_result("segmentation", segmentation.coverage)
     else:
@@ -79,7 +80,7 @@ def _analyze(scene: dict, detect: bool, labels: np.ndarray | None = None) -> Sat
         impact = impact_result(*coverage_of(rgb))
     detection = detect_result(rgb, 0.25) if detect and registry.detector else None
     return SatelliteAnalysisResponse(scene=_scene_model(scene), segmentation=segmentation,
-                                     impact=impact, detection=detection)
+                                     impact=impact, detection=detection, quality=quality)
 
 
 # ---------------------------------------------------------------- database: cache and history
@@ -138,7 +139,7 @@ async def dates(request: Request, lat: float = Query(..., ge=-85, le=85),
              summary="Download the satellite image for an area and analyse its land cover")
 async def analyze(request: Request, body: SatelliteRequest):
     key = db.cache_key(kind="analysis", bbox=body.bbox, zoom=body.zoom, release=body.release,
-                       detect=body.detect, model=_model_tag(body.detect))
+                       detect=body.detect, quality=body.quality, model=_model_tag(body.detect))
     if not body.refresh:
         hit = await run_in_threadpool(_cached, key, body.release is None, SatelliteAnalysisResponse)
         if hit is not None:
@@ -146,7 +147,7 @@ async def analyze(request: Request, body: SatelliteRequest):
     scene = await _fetch(request, body.bbox, body.release, body.zoom)
 
     def work():
-        result = _analyze(scene, body.detect)
+        result = _analyze(scene, body.detect, body.quality)
         return _save("analysis", key, list(body.bbox), result,
                      {**_summary(result), "model": _model_tag(body.detect)})
 
@@ -159,7 +160,7 @@ async def compare_dates(request: Request, body: CompareRequest):
     model = require_segmenter()
     bbox = list(body.bbox)
     key = db.cache_key(kind="comparison", bbox=bbox, zoom=body.zoom, release=body.release_before,
-                       release_after=body.release_after, model=_model_tag())
+                       release_after=body.release_after, quality=body.quality, model=_model_tag())
     if not body.refresh:
         hit = await run_in_threadpool(_cached, key, body.release_after is None, CompareResponse)
         if hit is not None:
@@ -173,15 +174,16 @@ async def compare_dates(request: Request, body: CompareRequest):
     after = await _fetch(request, bbox, body.release_after, zoom)
 
     def work():
-        lb, la = model.predict(before["rgb"]), model.predict(after["rgb"])
-        res_b, res_a = _analyze(before, False, lb), _analyze(after, False, la)
+        tta = body.quality == "accurate"
+        lb, la = model.predict(before["rgb"], tta=tta), model.predict(after["rgb"], tta=tta)
+        res_b, res_a = _analyze(before, False, body.quality, lb), _analyze(after, False, body.quality, la)
         diff = compare(lb, la, after["rgb"], after["area_ha"])
         cov_change = {c: round(res_a.segmentation.coverage[c] - res_b.segmentation.coverage[c], 2)
                       for c in seg.CLASS_NAMES}
         result = CompareResponse(before=res_b, after=res_a, changed_percent=diff["changed_percent"],
                                  changed_hectares=diff["changed_hectares"], coverage_change=cov_change,
                                  transitions=diff["transitions"],
-                                 change_map=to_data_url(diff["change_map"]))
+                                 change_map=to_data_url(diff["change_map"]), quality=body.quality)
         summary = {**_summary(res_a), "release": res_b.scene.release, "date": res_b.scene.date,
                    "release_after": res_a.scene.release, "date_after": res_a.scene.date,
                    "changed_percent": result.changed_percent,

@@ -9,7 +9,16 @@ import DateSelect from "../components/DateSelect";
 import { Empty, ErrorNote, Working } from "../components/Feedback";
 import ImageViewer from "../components/ImageViewer";
 import ImpactPanel from "../components/ImpactPanel";
-import { PageHead, SavedNote, Stats, Step, useRevealOn } from "../components/Layout";
+import {
+  PageHead,
+  QualitySwitch,
+  ReportButton,
+  SavedNote,
+  Stats,
+  Step,
+  useQuality,
+  useRevealOn,
+} from "../components/Layout";
 import { classInfo } from "../classes";
 import { useAreaDates, useHealth } from "../hooks";
 
@@ -30,6 +39,7 @@ export default function MapAnalysis() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [savedOn, setSavedOn] = useState(null);
+  const [quality, setQuality] = useQuality();
   const [params] = useSearchParams();
   const dates = useAreaDates(bbox);
   const resultsRef = useRevealOn(result);
@@ -62,7 +72,7 @@ export default function MapAnalysis() {
     try {
       setSavedOn(null);
       setResult(
-        await api.analyzeArea({ bbox, release: release ? Number(release) : null, detect, refresh }),
+        await api.analyzeArea({ bbox, release: release ? Number(release) : null, detect, quality, refresh }),
       );
     } catch (e) {
       setError(e.message);
@@ -107,10 +117,15 @@ export default function MapAnalysis() {
           </Step>
 
           <Step n={3} title="Run the analysis" done={Boolean(result)}>
+            <QualitySwitch value={quality} onChange={setQuality} disabled={busy} />
             <button type="button" className="btn btn-primary btn-block" onClick={() => analyze()} disabled={!ready || busy}>
               {busy ? "Analysing…" : "Analyse area"}
             </button>
-            {busy && <Working>Downloading imagery and running the model. This takes 5–60 seconds.</Working>}
+            {busy && (
+              <Working>
+                Downloading imagery and running the model. This takes {quality === "fast" ? "5–20" : "5–40"} seconds.
+              </Working>
+            )}
             <ErrorNote error={error} />
           </Step>
         </aside>
@@ -128,9 +143,12 @@ export default function MapAnalysis() {
         <section className="results" aria-label="Results" ref={resultsRef}>
           <div className="results-head">
             <h2>Land cover · {dateLabel(scene.date)}</h2>
-            <p className="mono muted">
-              {scene.width} × {scene.height} px · {scene.meters_per_pixel} m/px · {scene.area_ha} ha
-            </p>
+            <div className="results-meta">
+              <p className="mono muted">
+                {scene.width} × {scene.height} px · {scene.meters_per_pixel} m/px · {result.quality ?? "accurate"} mode
+              </p>
+              <ReportButton savedId={result.saved_id} />
+            </div>
           </div>
 
           <SavedNote result={result} savedOn={savedOn} onRerun={() => analyze(true)} busy={busy} />

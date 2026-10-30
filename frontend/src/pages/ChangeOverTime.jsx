@@ -10,7 +10,16 @@ import DateSelect from "../components/DateSelect";
 import { Empty, ErrorNote, Working } from "../components/Feedback";
 import ImageViewer from "../components/ImageViewer";
 import ImpactPanel from "../components/ImpactPanel";
-import { PageHead, SavedNote, Stats, Step, useRevealOn } from "../components/Layout";
+import {
+  PageHead,
+  QualitySwitch,
+  ReportButton,
+  SavedNote,
+  Stats,
+  Step,
+  useQuality,
+  useRevealOn,
+} from "../components/Layout";
 import { classInfo } from "../classes";
 import { formatHa } from "../geo";
 import { useAreaDates, useHealth } from "../hooks";
@@ -28,6 +37,7 @@ export default function ChangeOverTime() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [savedOn, setSavedOn] = useState(null);
+  const [quality, setQuality] = useQuality();
   const [params] = useSearchParams();
   const savedDates = useRef(null); // dates of a result opened from History, applied once its dates load
   const dates = useAreaDates(bbox);
@@ -79,6 +89,7 @@ export default function ChangeOverTime() {
           bbox,
           release_before: Number(before),
           release_after: after ? Number(after) : null,
+          quality,
           refresh,
         }),
       );
@@ -125,6 +136,7 @@ export default function ChangeOverTime() {
           </Step>
 
           <Step n={3} title="Compare" done={Boolean(result)}>
+            <QualitySwitch value={quality} onChange={setQuality} disabled={busy} />
             {modelMissing && (
               <p className="note note-warn">Change detection needs the U-Net++ model. Load it in the backend first.</p>
             )}
@@ -152,7 +164,12 @@ export default function ChangeOverTime() {
             <h2>
               {fmtDate(b.scene.date)} → {fmtDate(a.scene.date)}
             </h2>
-            <p className="mono muted">{b.scene.area_ha} ha analysed</p>
+            <div className="results-meta">
+              <p className="mono muted">
+                {b.scene.area_ha} ha analysed · {result.quality ?? "accurate"} mode
+              </p>
+              <ReportButton savedId={result.saved_id} />
+            </div>
           </div>
 
           <SavedNote result={result} savedOn={savedOn} onRerun={() => compare(true)} busy={busy} />

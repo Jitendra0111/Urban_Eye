@@ -8,9 +8,14 @@ httpx==0.28.1
 numpy>=1.26,<3
 pillow>=10.4
 
+# PDF reports
+reportlab>=4.2
+
 # Models (U-Net++ segmentation and YOLO11 detection)
 torch>=2.3
 segmentation-models-pytorch>=0.3.4
+onnxruntime>=1.18             # fast CPU inference (export once: python scripts/export_onnx.py)
+onnx>=1.16                    # only needed by scripts/export_onnx.py
 ultralytics>=8.3.0
 
 # Tests

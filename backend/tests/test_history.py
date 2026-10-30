@@ -68,3 +68,22 @@ def test_open_and_delete_history_entry(client, downloads):  # noqa: F811
     assert client.delete(f"/api/history/{saved['saved_id']}").status_code == 204
     assert client.get(f"/api/history/{saved['saved_id']}").status_code == 404
     assert client.get("/api/health").json()["saved_results"] >= 1
+
+
+def test_pdf_report_for_analysis_and_comparison(client, downloads):  # noqa: F811
+    a = client.post("/api/satellite/analyze", json={"bbox": BBOX, "refresh": True}).json()
+    c = client.post("/api/satellite/compare", json={"bbox": BBOX, "release_before": 1, "refresh": True}).json()
+    for saved_id in (a["saved_id"], c["saved_id"]):
+        r = client.get(f"/api/history/{saved_id}/report.pdf")
+        assert r.status_code == 200 and r.headers["content-type"] == "application/pdf"
+        assert r.content.startswith(b"%PDF") and len(r.content) > 5000
+    assert client.get("/api/history/999999/report.pdf").status_code == 404
+
+
+def test_fast_and_accurate_are_cached_separately(client, downloads):  # noqa: F811
+    fast = client.post("/api/satellite/analyze", json={"bbox": BBOX, "quality": "fast", "refresh": True}).json()
+    acc = client.post("/api/satellite/analyze", json={"bbox": BBOX, "quality": "accurate"}).json()
+    assert fast["quality"] == "fast" and acc["quality"] == "accurate"
+    assert acc["saved_id"] != fast["saved_id"]
+    again = client.post("/api/satellite/analyze", json={"bbox": BBOX, "quality": "fast"}).json()
+    assert again["cached"] is True and again["saved_id"] == fast["saved_id"]

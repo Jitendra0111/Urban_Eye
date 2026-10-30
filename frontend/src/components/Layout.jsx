@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../api";
 
 /** Page title row: title and one-line description on the left, optional extra content on the right. */
 export function PageHead({ title, children, aside }) {
@@ -73,5 +74,66 @@ export function SavedNote({ result, savedOn, onRerun, busy }) {
         </button>
       )}
     </div>
+  );
+}
+
+const QUALITY_KEY = "urbaneye.quality";
+
+/** The Fast / Accurate choice, remembered in this browser. */
+export function useQuality() {
+  const [quality, setQuality] = useState(() => {
+    try {
+      return localStorage.getItem(QUALITY_KEY) === "accurate" ? "accurate" : "fast";
+    } catch {
+      return "fast";
+    }
+  });
+  const choose = (q) => {
+    setQuality(q);
+    try {
+      localStorage.setItem(QUALITY_KEY, q);
+    } catch {
+      // Storage blocked: the choice still applies on this page.
+    }
+  };
+  return [quality, choose];
+}
+
+const QUALITY_OPTIONS = [
+  { value: "fast", label: "Fast", hint: "One model pass. About twice as fast." },
+  { value: "accurate", label: "Accurate", hint: "Averages the image and its mirror image. Slightly cleaner maps." },
+];
+
+export function QualitySwitch({ value, onChange, disabled }) {
+  const current = QUALITY_OPTIONS.find((o) => o.value === value) ?? QUALITY_OPTIONS[0];
+  return (
+    <fieldset className="quality" disabled={disabled}>
+      <legend>Model mode</legend>
+      <div className="segmented" role="radiogroup">
+        {QUALITY_OPTIONS.map((o) => (
+          <label key={o.value} className={`segmented-option ${value === o.value ? "is-on" : ""}`}>
+            <input
+              type="radio"
+              name="quality"
+              value={o.value}
+              checked={value === o.value}
+              onChange={() => onChange(o.value)}
+            />
+            {o.label}
+          </label>
+        ))}
+      </div>
+      <p className="hint">{current.hint}</p>
+    </fieldset>
+  );
+}
+
+/** Download link for the PDF report of a saved result. */
+export function ReportButton({ savedId, className = "btn btn-small" }) {
+  if (!savedId) return null;
+  return (
+    <a className={className} href={api.reportUrl(savedId)} download>
+      Download PDF report
+    </a>
   );
 }

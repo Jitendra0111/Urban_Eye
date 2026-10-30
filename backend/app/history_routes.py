@@ -1,9 +1,10 @@
 """Saved results: list, reopen and delete past satellite analyses and comparisons."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from starlette.concurrency import run_in_threadpool
 
 from . import db
 from .schemas import HistoryEntry, HistoryItem, HistoryPage
+from .services.report import build_pdf
 
 router = APIRouter(prefix="/api/history", tags=["history"])
 
@@ -32,6 +33,18 @@ async def entry(record_id: int):
         raise HTTPException(404, "No saved result with this id")
     result = await run_in_threadpool(db.load_result, rec)
     return HistoryEntry(item=_item(rec), result={**result, "saved_id": rec.id, "cached": True})
+
+
+@router.get("/{record_id}/report.pdf", summary="Download a saved result as a PDF report",
+            response_class=Response, responses={200: {"content": {"application/pdf": {}}}})
+def report(record_id: int):
+    rec = db.get(record_id)
+    if rec is None:
+        raise HTTPException(404, "No saved result with this id")
+    pdf = build_pdf(_item(rec).model_dump(), db.load_result(rec))
+    name = f"urbaneye_{rec.kind}_{rec.id}.pdf"
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.delete("/{record_id}", status_code=204, summary="Delete a saved result")
